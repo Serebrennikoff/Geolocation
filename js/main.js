@@ -20,7 +20,8 @@ let Model = {
 			clusterBalloonPanelMaxMapArea: 0,
 			clusterBalloonContentLayoutWidth: 300,
       clusterBalloonContentLayoutHeight: 200,
-			hideIconOnBalloonOpen: false
+			hideIconOnBalloonOpen: false,
+			clusterIconColor: '#CD5C5C'
 		})
 	},
 	coordsToAddress(coords) {
@@ -37,11 +38,11 @@ let Model = {
 	publishReview() {
 		let fieldsList = document.querySelector('#reviewForm').elements,
 				emptyFieldList = Array.prototype.filter.call(fieldsList, item => {
-					return (item.value.trim().length === 0) ? true : false
+					return !item.value.trim().length;
 				});
 
 		return new Promise( (resolve, reject) => {
-			if(emptyFieldList.length === 0) {
+			if(!emptyFieldList.length) {
 				let presentTime = new Date().toLocaleDateString("ru", {
 					hour: 'numeric',
 					minute: 'numeric',
@@ -66,6 +67,8 @@ let Model = {
 					address: reviewData.geoObjectAddress,
 					reviewText: reviewData.reviewDetails.reviewText,
 					publishedOn: reviewData.reviewDetails.publishedOn
+				}, {
+					iconColor: '#CD5C5C'
 				});
 
 				geoObject.events.add('click', e => {
@@ -91,9 +94,8 @@ let Model = {
 	},
 	returnReviewsForThisMark(coords) {
 		thisMarkReviews = Model.generalReviewData.filter( item => {
-			if(item.geoObjectCoords[0] === coords[0] &&
-			 	 item.geoObjectCoords[1] === coords[1]) return true	
-			return false;	
+			return item.geoObjectCoords[0] === coords[0] &&
+			 	 		 item.geoObjectCoords[1] === coords[1];
 		}),
 		reviewsArray = [];
 		for(let review of thisMarkReviews) {
@@ -150,19 +152,21 @@ let View = {
 	},
 	setClustererContentLayout() {
 		return ymaps.templateLayoutFactory.createClass(
-			'<div class=ballon_wrapper>' +
-			'<h3 class=ballon_header>{{ properties.place|raw }}</h3>' +
-      '<div class=ballon_body><a href="#" onclick="Router.handle( \'openSelectedObject\', {{ properties.coords }}, event)">{{ properties.address|raw }}</a><p>{{ properties.reviewText|raw }}</p></div>' +
-      '</div>' +
-      '<div class=ballon_footer>{{ properties.publishedOn|raw }}</div>'
+			`<div class=ballon_wrapper>
+				<h3 class=ballon_header>{{ properties.place|raw }}</h3>
+      	<div class=ballon_body>
+      		<a href="#" 
+      			 onclick="Router.handle( \'openSelectedObject\', {{ properties.coords }}, event)">
+      			 	{{ properties.address|raw }}
+      		</a>
+      		<p>
+      		{{ properties.reviewText|raw }}
+      		</p>
+      	</div> 
+      </div>
+      <div class=ballon_footer>{{ properties.publishedOn|raw }}</div>`
 		);
 	},
-	resetInputs() {
-		let inputsList = document.querySelector('#reviewForm').elements;
-		Array.prototype.forEach.call(inputsList, item => {
-			item.value = ''
-		});
-	}
 }
 let Controller = {
 	openReviewWindowRoute(extraArgs) {
@@ -180,7 +184,7 @@ let Controller = {
 				reviewList.innerHTML = '';
 			}
 			reviewList.innerHTML += View.render('publishReview', reviewData);
-			View.resetInputs();
+			reviewForm.reset();
 		},
 		emptyFieldList => {
 			View.markEmptyFields(emptyFieldList);
